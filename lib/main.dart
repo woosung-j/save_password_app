@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:save_password/screens/home_screen.dart';
 import 'providers/password_provider.dart';
 import 'providers/pin_provider.dart';
+import 'providers/biometric_provider.dart';
 import 'screens/pin_entry_screen.dart';
 import 'screens/splash_screen.dart';
 import 'constants/styles.dart';
@@ -16,6 +17,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => PasswordProvider()),
         ChangeNotifierProvider(create: (_) => PinProvider()),
+        ChangeNotifierProvider(create: (_) => BiometricProvider()),
       ],
       child: MyApp(),
     ),

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fingerprint_required">지문 인증</string>
+    <string name="fingerprint_hint">지문 센서를 터치해주세요</string>
+    <string name="fingerprint_not_recognized">지문을 인식할 수 없습니다. 다시 시도해주세요.</string>
+    <string name="fingerprint_success">지문이 인식되었습니다</string>
+    <string name="cancel">취소</string>
+    <string name="use_pin">PIN 사용</string>
+</resources> 

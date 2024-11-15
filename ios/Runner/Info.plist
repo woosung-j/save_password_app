@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>생체 인증을 사용하여 앱에 접근합니다</string>
 </dict>
 </plist>

@@ -37,6 +37,9 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   path_provider: ^2.1.2  # 추가
   shared_preferences: ^2.2.2  # 추가
+  local_auth: ^2.1.8
+  local_auth_android: ^1.0.35  # 추가
+  local_auth_ios: ^1.1.5       # 추가
 
 
   # The following adds the Cupertino Icons font to your application.

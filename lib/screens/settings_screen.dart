@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../constants/styles.dart';
 import '../providers/pin_provider.dart';
 import 'pin_entry_screen.dart';
+import '../providers/biometric_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   @override
@@ -18,98 +19,136 @@ class SettingsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Consumer<PinProvider>(
-        builder: (context, pinProvider, child) {
-          return ListView(
-            children: [
-              _buildSettingSection(
-                title: '보안',
-                items: [
-                  SettingItem(
-                    title: 'PIN 비밀번호 사용',
-                    icon: Icons.lock_outline,
-                    trailing: Switch(
-                      value: pinProvider.isPinEnabled,
-                      onChanged: (value) async {
-                        if (value) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PinEntryScreen(isSetup: true),
-                            ),
-                          );
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PinEntryScreen(
-                                isVerification: true,
-                                onVerificationSuccess: () async {
-                                  await pinProvider.setPinEnabled(false);
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      activeColor: AppStyles.primary,
-                    ),
-                  ),
-                  if (pinProvider.isPinEnabled)
-                    SettingItem(
-                      title: 'PIN 변경',
-                      icon: Icons.pin_outlined,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PinEntryScreen(
-                              isVerification: true,
-                              onVerificationSuccess: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => PinEntryScreen(
-                                      isSetup: true,
-                                      isChanging: true,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  SettingItem(
-                    title: '지문 인식 사용',
-                    icon: Icons.fingerprint,
-                    trailing: Switch(
-                      value: false, // TODO: 지문 인식 상태 관리
-                      onChanged: null, // TODO: 지문 인식 설정
-                      activeColor: AppStyles.primary,
-                    ),
-                  ),
-                ],
-              ),
-              _buildSettingSection(
-                title: '데이터',
-                items: [
-                  SettingItem(
-                    title: '백업',
-                    icon: Icons.backup_outlined,
-                    onTap: () {
-                      // TODO: 백업 기능
-                    },
-                  ),
-                ],
+      body: ListView(
+        children: [
+          _buildSettingSection(
+            title: '보안',
+            items: _buildSecurityItems(context),
+          ),
+          _buildSettingSection(
+            title: '데이터',
+            items: [
+              SettingItem(
+                title: '백업',
+                icon: Icons.backup_outlined,
+                onTap: () {
+                  // TODO: 백업 기능
+                },
               ),
             ],
-          );
-        },
+          ),
+        ],
       ),
     );
+  }
+
+  List<SettingItem> _buildSecurityItems(BuildContext context) {
+    final pinProvider = context.watch<PinProvider>();
+    final biometricProvider = context.watch<BiometricProvider>();
+    
+    List<SettingItem> items = [
+      SettingItem(
+        title: 'PIN 비밀번호 사용',
+        icon: Icons.lock_outline,
+        trailing: Switch(
+          value: pinProvider.isPinEnabled,
+          onChanged: (value) async {
+            if (value) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PinEntryScreen(isSetup: true),
+                ),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PinEntryScreen(
+                    isVerification: true,
+                    onVerificationSuccess: () async {
+                      await pinProvider.setPinEnabled(false);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              );
+            }
+          },
+          activeColor: AppStyles.primary,
+        ),
+      ),
+    ];
+
+    if (pinProvider.isPinEnabled) {
+      items.add(
+        SettingItem(
+          title: 'PIN 변경',
+          icon: Icons.pin_outlined,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PinEntryScreen(
+                  isVerification: true,
+                  onVerificationSuccess: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PinEntryScreen(
+                          isSetup: true,
+                          isChanging: true,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    if (biometricProvider.isBiometricAvailable) {
+      items.add(
+        SettingItem(
+          title: '지문 인식 사용',
+          icon: Icons.fingerprint,
+          trailing: Switch(
+            value: biometricProvider.isBiometricEnabled,
+            onChanged: (value) async {
+              print('Biometric switch tapped: $value');
+              if (value) {
+                if (!pinProvider.isPinEnabled) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('먼저 PIN을 설정해주세요')),
+                  );
+                  return;
+                }
+                print('Attempting to authenticate...');
+                final authenticated = await biometricProvider.authenticateSetup();
+                print('Authentication result: $authenticated');
+                if (authenticated) {
+                  await biometricProvider.setBiometricEnabled(true);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('지문 인식이 활성화되었습니다')),
+                  );
+                }
+              } else {
+                await biometricProvider.setBiometricEnabled(false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('지문 인식이 비활성화되었습니다')),
+                );
+              }
+            },
+            activeColor: AppStyles.primary,
+          ),
+        ),
+      );
+    }
+
+    return items;
   }
 
   Widget _buildSettingSection({

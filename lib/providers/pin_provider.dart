@@ -13,22 +13,16 @@ class PinProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   
   PinProvider() {
-    _loadPinSettings();
+    _init();
   }
 
-  Future<void> _loadPinSettings() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      _isPinEnabled = prefs.getBool(_pinEnabledKey) ?? false;
-      _pin = prefs.getString(_pinKey);
-      _isInitialized = true;
-      print('PIN Settings loaded - Enabled: $_isPinEnabled, PIN: ${_pin != null}');
-      notifyListeners();
-    } catch (e) {
-      print('Error loading PIN settings: $e');
-      _isInitialized = true;
-      notifyListeners();
-    }
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isPinEnabled = prefs.getBool(_pinEnabledKey) ?? false;
+    _pin = prefs.getString(_pinKey);
+    _isInitialized = true;
+    print('PinProvider initialized - Enabled: $_isPinEnabled, Has PIN: ${_pin != null}');
+    notifyListeners();
   }
 
   Future<void> setPinEnabled(bool enabled) async {

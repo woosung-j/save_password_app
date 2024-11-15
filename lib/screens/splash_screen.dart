@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/styles.dart';
 import '../providers/pin_provider.dart';
+import '../providers/biometric_provider.dart';
 import 'home_screen.dart';
 import 'pin_entry_screen.dart';
 
@@ -14,36 +15,72 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _initialize();
   }
 
-  Future<void> _initializeApp() async {
-    // 최소 스플래시 표시 시간 설정
-    await Future.delayed(Duration(seconds: 1));
+  Future<void> _initialize() async {
+    print('Starting initialization...');
     
+    // Provider 초기화를 위한 충분한 지연
+    await Future.delayed(Duration(seconds: 2));
     if (!mounted) return;
 
-    // PinProvider가 초기화될 때까지 대기
+    final biometricProvider = context.read<BiometricProvider>();
     final pinProvider = context.read<PinProvider>();
-    while (!pinProvider.isInitialized) {
+
+    // Provider 상태가 완전히 로드될 때까지 대기
+    while (!mounted || 
+           !biometricProvider.isInitialized || 
+           !pinProvider.isInitialized) {
       await Future.delayed(Duration(milliseconds: 100));
-      if (!mounted) return;
     }
 
-    // PIN 상태에 따라 화면 전환
-    if (pinProvider.isPinEnabled) {
-      print('PIN is enabled, navigating to PIN entry screen');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => PinEntryScreen()),
-      );
-    } else {
-      print('PIN is disabled, navigating to home screen');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => HomeScreen()),
-      );
+    final isBiometricEnabled = biometricProvider.isBiometricEnabled;
+    final isPinEnabled = pinProvider.isPinEnabled;
+
+    print('Security settings loaded - Biometric: $isBiometricEnabled, PIN: $isPinEnabled');
+
+    if (isBiometricEnabled) {
+      print('Attempting biometric authentication');
+      try {
+        final authenticated = await biometricProvider.authenticate();
+        if (authenticated) {
+          print('Biometric authentication successful');
+          _navigateToHome();
+          return;
+        } else {
+          print('Biometric authentication failed');
+        }
+      } catch (e) {
+        print('Biometric authentication error: $e');
+      }
     }
+
+    if (isPinEnabled) {
+      print('PIN authentication required');
+      _navigateToPinScreen();
+    } else {
+      print('No security enabled, going to home');
+      _navigateToHome();
+    }
+  }
+
+  void _navigateToHome() {
+    if (!mounted) return;
+    print('Navigating to home screen');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HomeScreen()),
+    );
+  }
+
+  void _navigateToPinScreen() {
+    if (!mounted) return;
+    print('Navigating to PIN screen');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => PinEntryScreen()),
+    );
   }
 
   @override
@@ -51,24 +88,8 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: AppStyles.background,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.lock_outline_rounded,
-              size: 64,
-              color: AppStyles.primary,
-            ),
-            SizedBox(height: 16),
-            Text(
-              '비밀번호 관리',
-              style: AppStyles.heading,
-            ),
-            SizedBox(height: 32),
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppStyles.primary),
-            ),
-          ],
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppStyles.primary),
         ),
       ),
     );
