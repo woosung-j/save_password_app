@@ -36,6 +36,7 @@ dependencies:
   provider: ^6.1.1  # GetX 대신 Provider 사용
   flutter_secure_storage: ^9.0.0
   path_provider: ^2.1.2  # 추가
+  shared_preferences: ^2.2.2  # 추가
 
 
   # The following adds the Cupertino Icons font to your application.

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/password_item.dart';
 import '../services/db_helper.dart';
+import '../helpers/hangul_helper.dart';
 
 class PasswordProvider extends ChangeNotifier {
   final DBHelper _dbHelper = DBHelper();
@@ -66,13 +67,13 @@ class PasswordProvider extends ChangeNotifier {
 
   // 검색 기능
   void search(String query) {
-    _searchQuery = query.toLowerCase();
-    if (_searchQuery.isEmpty) {
+    _searchQuery = query;
+    if (query.isEmpty) {
       _filteredPasswords = _passwords;
     } else {
       _filteredPasswords = _passwords.where((item) {
-        return item.site.toLowerCase().contains(_searchQuery) ||
-               item.username.toLowerCase().contains(_searchQuery);
+        return HangulHelper.matchesSearch(item.site, query) || 
+               HangulHelper.matchesSearch(item.username, query);
       }).toList();
     }
     notifyListeners();

@@ -1,28 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:save_password/screens/pin_entry_screen.dart';
 import '../constants/styles.dart';
 import '../models/password_item.dart';
 import '../providers/password_provider.dart';
+import '../providers/pin_provider.dart';
 import '../widgets/password_detail_modal.dart';
 import '../widgets/password_search_delegate.dart';
 import 'add_password_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  DateTime? _pausedTime;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   @override
   void dispose() {
-    _searchController.dispose();
-    _searchFocusNode.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _pausedTime = DateTime.now();
+    } 
+    else if (state == AppLifecycleState.resumed && _pausedTime != null) {
+      final difference = DateTime.now().difference(_pausedTime!);
+      final pinProvider = context.read<PinProvider>();
+      
+      // 테스트를 위해 20초로 설정
+      if (difference.inSeconds >= 20 && pinProvider.isPinEnabled) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => PinEntryScreen(isAppReentry: true),
+          ),
+        );
+      }
+      _pausedTime = null;
+    }
+  }
+
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   void _resetSearch() {
     _searchController.clear();
@@ -63,10 +94,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     size: 24,
                   ),
                   onPressed: () {
-                    // TODO: 환경설정 화면으로 이동
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => SettingsScreen()),
+                    );
                   },
                 ),
-                SizedBox(width: 4), // 오른쪽 여백 추가
+                SizedBox(width: 4),
               ],
             ),
             SliverToBoxAdapter(
